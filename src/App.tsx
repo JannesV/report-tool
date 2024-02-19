@@ -25,6 +25,7 @@ import {
 import { useState } from "react";
 import { v4 } from "uuid";
 import { CategoryType, ReportCategoryDto } from "./types";
+import { ImportModal } from "./ImportModal";
 
 export const App = () => {
   const [categories, setCategories] = useState<ReportCategoryDto[]>([]);
@@ -227,6 +228,7 @@ export const App = () => {
   return (
     <ChakraProvider>
       <Box shadow="lg" borderRadius="lg" m={10} p={10}>
+        <ImportModal onSave={setCategories} />
         <Accordion allowMultiple w={800} borderRadius="lg" overflow="hidden">
           {renderCategory(categories, handleRootChangeCategory)}
         </Accordion>
