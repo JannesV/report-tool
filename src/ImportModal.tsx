@@ -20,9 +20,15 @@ import { ReportCategoryDto } from "./types";
 
 interface ImportModalProps {
   onSave(categories: ReportCategoryDto[]): void;
+  title: string;
+  buttonLabel: string;
 }
 
-export const ImportModal: FC<ImportModalProps> = ({ onSave }) => {
+export const ImportModal: FC<ImportModalProps> = ({
+  onSave,
+  title,
+  buttonLabel,
+}) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [errorMessage, setErrorMessage] = useState<string | undefined>();
 
@@ -42,13 +48,13 @@ export const ImportModal: FC<ImportModalProps> = ({ onSave }) => {
   return (
     <>
       <Button leftIcon={<AttachmentIcon />} size="sm" mb={8} onClick={onOpen}>
-        Importeer Categorieën
+        {buttonLabel}
       </Button>
 
       <Modal isOpen={isOpen} onClose={onClose} size="5xl">
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader>Configuratie importeren</ModalHeader>
+          <ModalHeader>{title}</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
             <FormControl isInvalid={!!errorMessage}>

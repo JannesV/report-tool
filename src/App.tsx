@@ -23,13 +23,32 @@ import {
   Text,
   Textarea,
 } from "@chakra-ui/react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { v4 } from "uuid";
 import { CategoryType, ReportCategoryDto } from "./types";
 import { ImportModal } from "./ImportModal";
+import { mergeCategories } from "./mergeCategories";
+import { filterCustomCategories } from "./filterCustomCategories";
 
 export const App = () => {
   const [categories, setCategories] = useState<ReportCategoryDto[]>([]);
+
+  const handleAddVictorCategories = useCallback(
+    (cats: ReportCategoryDto[]) => {
+      const makeVictor = (cat: ReportCategoryDto[]): ReportCategoryDto[] => {
+        return cat.map((c) => ({
+          ...c,
+          isVictor: true,
+          subCategories: c.subCategories
+            ? makeVictor(c.subCategories)
+            : undefined,
+        }));
+      };
+
+      setCategories(mergeCategories(makeVictor(cats), categories));
+    },
+    [categories]
+  );
 
   const handleRootChangeCategory = (
     index: number,
@@ -52,47 +71,53 @@ export const App = () => {
   ) => {
     return cats.map((cat, catIndex) => {
       return (
-        <AccordionItem isFocusable={false} key={catIndex}>
-          <Center bg="blackAlpha.200">
+        <AccordionItem isFocusable={false} key={catIndex} mb={2}>
+          <Center
+            h={12}
+            bg={cat.isVictor ? "blackAlpha.200" : "green.200"}
+            borderRadius="lg"
+          >
             <AccordionButton gap={4}>
               <Text flex={1} textAlign="left">
                 {cat.name}
               </Text>
-              <Popover placement="left">
-                <PopoverTrigger>
-                  <IconButton
-                    onClick={(e) => {
-                      e.stopPropagation();
-                    }}
-                    icon={<DeleteIcon />}
-                    aria-label="delete"
-                  />
-                </PopoverTrigger>
-                <PopoverContent>
-                  <PopoverArrow />
-                  <PopoverBody
-                    flexDir="column"
-                    display="flex"
-                    alignItems="flex-end"
-                  >
-                    <Text fontSize="xs">
-                      Ben je zeker dat je deze categorie wil verwijderen?
-                    </Text>
-                    <Button
+              {!cat.isVictor && (
+                <Popover placement="left">
+                  <PopoverTrigger>
+                    <IconButton
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleChangeCategory(catIndex, undefined);
                       }}
-                      w={20}
-                      mt={2}
-                      size="xs"
-                      colorScheme="red"
+                      icon={<DeleteIcon />}
+                      aria-label="delete"
+                    />
+                  </PopoverTrigger>
+                  <PopoverContent>
+                    <PopoverArrow />
+                    <PopoverBody
+                      flexDir="column"
+                      display="flex"
+                      alignItems="flex-end"
                     >
-                      Ja
-                    </Button>
-                  </PopoverBody>
-                </PopoverContent>
-              </Popover>
+                      <Text fontSize="xs">
+                        Ben je zeker dat je deze categorie wil verwijderen?
+                      </Text>
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleChangeCategory(catIndex, undefined);
+                        }}
+                        w={20}
+                        mt={2}
+                        size="xs"
+                        colorScheme="red"
+                      >
+                        Ja
+                      </Button>
+                    </PopoverBody>
+                  </PopoverContent>
+                </Popover>
+              )}
 
               <AccordionIcon />
             </AccordionButton>
@@ -104,15 +129,15 @@ export const App = () => {
             display="flex"
             flexDir="column"
           >
-            <Grid
-              gap={5}
-              p={4}
-              mt={2}
-              border="1px"
-              borderColor="blackAlpha.300"
-              borderRadius="lg"
-            >
-              <Flex gap={5}>
+            {!cat.isVictor && (
+              <Grid
+                gap={5}
+                p={4}
+                mt={2}
+                border="1px"
+                borderColor="blackAlpha.300"
+                borderRadius="lg"
+              >
                 <Box flex={1}>
                   <FormLabel>Categorie Naam</FormLabel>
                   <Input
@@ -125,85 +150,70 @@ export const App = () => {
                     value={cat.name}
                     borderColor="blackAlpha.300"
                     bg="white"
+                    isDisabled={cat.isVictor}
                   />
                 </Box>
-                <Box flex={1}>
-                  <FormLabel>ID</FormLabel>
-                  <Input
+
+                <Box>
+                  <FormLabel>Categorie Type</FormLabel>
+                  <Select
                     onChange={(e) => {
+                      const value = e.currentTarget.value as CategoryType;
+
                       handleChangeCategory(catIndex, {
                         ...cat,
-                        id: e.currentTarget.value,
+                        type: value || undefined,
+                        fallback:
+                          value === CategoryType.EXTERNAL
+                            ? cat.fallback
+                            : undefined,
+                        to: value === CategoryType.MAIL ? cat.to : undefined,
                       });
                     }}
-                    value={cat.id}
+                    w={250}
                     borderColor="blackAlpha.300"
+                    placeholder="Erf over van ouder"
                     bg="white"
-                    fontFamily="monospace"
-                  />
+                  >
+                    <option value={CategoryType.MAIL}>Email</option>
+                    <option value={CategoryType.EXTERNAL}>Extern</option>
+                  </Select>
                 </Box>
-              </Flex>
 
-              <Box>
-                <FormLabel>Categorie Type</FormLabel>
-                <Select
-                  onChange={(e) => {
-                    const value = e.currentTarget.value as CategoryType;
-
-                    handleChangeCategory(catIndex, {
-                      ...cat,
-                      type: value || undefined,
-                      fallback:
-                        value === CategoryType.EXTERNAL
-                          ? cat.fallback
-                          : undefined,
-                      to: value === CategoryType.MAIL ? cat.to : undefined,
-                    });
-                  }}
-                  w={250}
-                  borderColor="blackAlpha.300"
-                  placeholder="Erf over van ouder"
-                  bg="white"
-                >
-                  <option value={CategoryType.MAIL}>Email</option>
-                  <option value={CategoryType.EXTERNAL}>Extern</option>
-                </Select>
-              </Box>
-
-              {cat.type === CategoryType.EXTERNAL && (
-                <Box flex={1}>
-                  <FormLabel>Link</FormLabel>
-                  <Input
-                    onChange={(e) => {
-                      handleChangeCategory(catIndex, {
-                        ...cat,
-                        fallback: e.currentTarget.value || undefined,
-                      });
-                    }}
-                    value={cat.to}
-                    borderColor="blackAlpha.300"
-                    bg="white"
-                  />
-                </Box>
-              )}
-
-              {cat.type === CategoryType.MAIL && (
-                <Box flex={1}>
-                  <FormLabel>Email</FormLabel>
-                  <Input
-                    onChange={(e) => {
-                      handleChangeCategory(catIndex, {
-                        ...cat,
-                        to: e.currentTarget.value || undefined,
-                      });
-                    }}
-                    value={cat.fallback}
-                    borderColor="blackAlpha.300"
-                    bg="white"
-                  />
-                </Box>
-              )}
-            </Grid>
+                {cat.type === CategoryType.EXTERNAL && (
+                  <Box flex={1}>
+                    <FormLabel>Link</FormLabel>
+                    <Input
+                      onChange={(e) => {
+                        handleChangeCategory(catIndex, {
+                          ...cat,
+                          fallback: e.currentTarget.value || undefined,
+                        });
+                      }}
+                      value={cat.to}
+                      borderColor="blackAlpha.300"
+                      bg="white"
+                    />
+                  </Box>
+                )}
+                {cat.type === CategoryType.MAIL && (
+                  <Box flex={1}>
+                    <FormLabel>Email</FormLabel>
+                    <Input
+                      onChange={(e) => {
+                        handleChangeCategory(catIndex, {
+                          ...cat,
+                          to: e.currentTarget.value || undefined,
+                        });
+                      }}
+                      value={cat.fallback}
+                      borderColor="blackAlpha.300"
+                      bg="white"
+                    />
+                  </Box>
+                )}
+              </Grid>
+            )}
 
             <Accordion allowMultiple borderRadius="lg" overflow="hidden">
               {cat.subCategories &&
@@ -254,7 +264,18 @@ export const App = () => {
   return (
     <ChakraProvider>
       <Box shadow="lg" borderRadius="lg" m={10} p={10}>
-        <ImportModal onSave={setCategories} />
+        <Flex gap={4}>
+          <ImportModal
+            onSave={(cats) => setCategories(mergeCategories(categories, cats))}
+            title="Importeer categorieën"
+            buttonLabel="Importeer categorieën"
+          />
+          <ImportModal
+            onSave={handleAddVictorCategories}
+            title="Importeer VICTOR categorieën"
+            buttonLabel="Importeer VICTOR categorieën"
+          />
+        </Flex>
         <Accordion allowMultiple w={800} borderRadius="lg" overflow="hidden">
           {renderCategory(categories, handleRootChangeCategory)}
         </Accordion>
@@ -280,7 +301,7 @@ export const App = () => {
         <Textarea
           fontFamily="monospace"
           placeholder="OUTPUT JSON"
-          value={JSON.stringify(categories, null, 2)}
+          value={JSON.stringify(filterCustomCategories(categories), null, 2)}
           size="sm"
           h={400}
           mt={10}

@@ -13,4 +13,5 @@ export type ReportCategoryDto = {
    */
   fallback?: string;
   to?: string;
+  isVictor?: boolean;
 };
