@@ -9,6 +9,7 @@ import {
   Button,
   Center,
   ChakraProvider,
+  Flex,
   FormLabel,
   Grid,
   IconButton,
@@ -51,7 +52,7 @@ export const App = () => {
   ) => {
     return cats.map((cat, catIndex) => {
       return (
-        <AccordionItem isFocusable={false} key={cat.id}>
+        <AccordionItem isFocusable={false} key={catIndex}>
           <Center bg="blackAlpha.200">
             <AccordionButton gap={4}>
               <Text flex={1} textAlign="left">
@@ -111,18 +112,37 @@ export const App = () => {
               borderColor="blackAlpha.300"
               borderRadius="lg"
             >
-              <Box flex={1}>
-                <FormLabel>Categorien Naam</FormLabel>
-                <Input
-                  onChange={(e) => {
-                    handleChangeCategory(catIndex, {
-                      ...cat,
-                      name: e.currentTarget.value,
-                    });
-                  }}
-                  value={cat.name}
-                />
-              </Box>
+              <Flex gap={5}>
+                <Box flex={1}>
+                  <FormLabel>Categorie Naam</FormLabel>
+                  <Input
+                    onChange={(e) => {
+                      handleChangeCategory(catIndex, {
+                        ...cat,
+                        name: e.currentTarget.value,
+                      });
+                    }}
+                    value={cat.name}
+                    borderColor="blackAlpha.300"
+                    bg="white"
+                  />
+                </Box>
+                <Box flex={1}>
+                  <FormLabel>ID</FormLabel>
+                  <Input
+                    onChange={(e) => {
+                      handleChangeCategory(catIndex, {
+                        ...cat,
+                        id: e.currentTarget.value,
+                      });
+                    }}
+                    value={cat.id}
+                    borderColor="blackAlpha.300"
+                    bg="white"
+                    fontFamily="monospace"
+                  />
+                </Box>
+              </Flex>
 
               <Box>
                 <FormLabel>Categorie Type</FormLabel>
@@ -141,7 +161,9 @@ export const App = () => {
                     });
                   }}
                   w={250}
+                  borderColor="blackAlpha.300"
                   placeholder="Erf over van ouder"
+                  bg="white"
                 >
                   <option value={CategoryType.MAIL}>Email</option>
                   <option value={CategoryType.EXTERNAL}>Extern</option>
@@ -159,6 +181,8 @@ export const App = () => {
                       });
                     }}
                     value={cat.to}
+                    borderColor="blackAlpha.300"
+                    bg="white"
                   />
                 </Box>
               )}
@@ -174,6 +198,8 @@ export const App = () => {
                       });
                     }}
                     value={cat.fallback}
+                    borderColor="blackAlpha.300"
+                    bg="white"
                   />
                 </Box>
               )}
